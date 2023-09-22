@@ -57,3 +57,32 @@ func (pc *PropertyTransferSmartContract) AddProperty(ctx contractapi.Transaction
 
 	return nil
 }
+
+// QueryAllProperties 함수는 모든 존재하는 부동산 정보를 반환합니다.
+func (pc *PropertyTransferSmartContract) QueryAllProperties(ctx contractapi.TransactionContextInterface) ([]*Property, error) {
+	// 월드 스테이트에서 모든 부동산 정보를 조회하기 위해 범위 설정
+	propertyIterator, err := ctx.GetStub().GetStateByRange("", "")
+	if err != nil {
+		return nil, err
+	}
+	defer propertyIterator.Close() // propertyIterator 사용 종료 후 정리
+ 
+	var properties []*Property
+	// 모든 부동산 정보에 대한 반복문
+	for propertyIterator.HasNext() {
+		propertyResponse, err := propertyIterator.Next()
+		if err != nil {
+			return nil, err
+		}
+ 
+		var property *Property
+		// JSON 데이터를 부동산 객체로 역직렬화
+		err = json.Unmarshal(propertyResponse.Value, &property)
+		if err != nil {
+			return nil, err
+		}
+		properties = append(properties, property) // 조회된 부동산 정보를 슬라이스에 추가
+	}
+ 
+	return properties, nil // 모든 부동산 정보가 포함된 슬라이스를 반환
+}
